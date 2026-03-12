@@ -98,20 +98,20 @@ def minify_css(text: str) -> str:
     return text.strip()
 
 
-def minify_js(text: str) -> str:
-    """
-    Light JS minifier – removes comments and collapses whitespace.
-    For heavy minification install terser and the script will use it
-    automatically (see _try_terser below).
-    """
-    # Remove single-line comments (careful with URLs – :// )
-    text = re.sub(r"(?<!:)//(?!/)[^\n]*", "", text)
-    # Remove multi-line comments
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
-    # Collapse whitespace
-    text = re.sub(r"\s{2,}", " ", text)
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    return "\n".join(lines)
+# def minify_js(text: str) -> str:
+#     """
+#     Light JS minifier – removes comments and collapses whitespace.
+#     For heavy minification install terser and the script will use it
+#     automatically (see _try_terser below).
+#     """
+#     # Remove single-line comments (careful with URLs – :// )
+#     text = re.sub(r"(?<!:)//(?!/)[^\n]*", "", text)
+#     # Remove multi-line comments
+#     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+#     # Collapse whitespace
+#     text = re.sub(r"\s{2,}", " ", text)
+#     lines = [line.strip() for line in text.splitlines() if line.strip()]
+#     return "\n".join(lines)
 
 
 def minify_json(text: str) -> str:
@@ -133,13 +133,13 @@ def minify_svg(text: str) -> str:
 
 
 MINIFIERS = {
-    ".html": minify_html,
-    ".htm":  minify_html,
-    ".css":  minify_css,
-    ".js":   minify_js,
-    ".json": minify_json,
-    ".svg":  minify_svg,
-    ".xml":  minify_svg,  # same approach works for generic XML
+    # ".html": minify_html,
+    # ".htm":  minify_html,
+    # ".css":  minify_css,
+    # ".js":   minify_js,
+    # ".json": minify_json,
+    # ".svg":  minify_svg,
+    # ".xml":  minify_svg,  # same approach works for generic XML
 }
 
 
