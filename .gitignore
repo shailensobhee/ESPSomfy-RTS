@@ -9,3 +9,4 @@ SomfyController.ino.esp32c3.bin
 SomfyController.ino.esp32s2.bin
 .vscode/settings.json
 .pio
+data

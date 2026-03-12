@@ -216,14 +216,17 @@ void Web::handleStreamFile(WebServer &server, const char *filename, const char *
   webServer.sendCORSHeaders(server);
   if(server.method() == HTTP_OPTIONS) { server.send(200, "OK"); return; }
   esp_task_wdt_reset();
-  // Load the index html page from the data directory.
-  Serial.print("Loading file ");
-  Serial.println(filename);
-  File file = LittleFS.open(filename, "r");
+  // Try gzip variant first; streamFile() auto-adds Content-Encoding: gzip for .gz files
+  String gzFilename = String(filename) + ".gz";
+  File file = LittleFS.open(gzFilename.c_str(), "r");
   if (!file) {
-    Serial.print("Error opening");
+    file = LittleFS.open(filename, "r");
+  }
+  if (!file) {
+    Serial.print("Error opening ");
     Serial.println(filename);
     server.send(500, _encoding_text, "Error opening file");
+    return;
   }
   esp_task_wdt_delete(NULL);
   server.streamFile(file, encoding);
