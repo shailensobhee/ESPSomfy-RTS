@@ -1,5 +1,4 @@
-#include <WebServer.h>
-#include <WebSocketsServer.h>
+#include <ESPAsyncWebServer.h>
 #include "Somfy.h"
 #ifndef wresp_h
 #define wresp_h
@@ -51,24 +50,26 @@ class JsonFormatter {
     void addElem(const char* name, uint32_t lval);
     void addElem(const char* name, bool bval);
     void addElem(const char *name, const char *val);
+    void addElem(const char* name, uint64_t lval);
 };
-class JsonResponse : public JsonFormatter {
+class AsyncJsonResp : public JsonFormatter {
   protected:
     void _safecat(const char *val, bool escape = false) override;
+    AsyncWebServerRequest *_request = nullptr;
+    AsyncResponseStream *_stream = nullptr;
   public:
-    WebServer *server;
-    void beginResponse(WebServer *server, char *buff, size_t buffSize);
+    void beginResponse(AsyncWebServerRequest *request, char *buff, size_t buffSize);
     void endResponse();
-    void send();
+    void flush();
 };
 class JsonSockEvent : public JsonFormatter {
   protected:
     bool _closed = false;
     void _safecat(const char *val, bool escape = false) override;
   public:
-    WebSocketsServer *server = nullptr;
-    void beginEvent(WebSocketsServer *server, const char *evt, char *buff, size_t buffSize);
-    void endEvent(uint8_t clientNum = 255);
+    AsyncWebSocket *server = nullptr;
+    void beginEvent(AsyncWebSocket *server, const char *evt, char *buff, size_t buffSize);
+    void endEvent(uint32_t clientId = 0);
     void closeEvent();
 };
 #endif

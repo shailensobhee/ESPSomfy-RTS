@@ -72,22 +72,6 @@ void GitRelease::setAssetProperty(const char *key, const char *val) {
     }
   }
 }
-void GitRelease::toJSON(JsonResponse &json) {
-  Timestamp ts;
-  char buff[20];
-  sprintf(buff, "%llu", this->id);
-  json.addElem("id", buff);
-  json.addElem("name", this->name);
-  json.addElem("date", ts.getISOTime(this->releaseDate));
-  json.addElem("draft", this->draft);
-  json.addElem("preRelease", this->preRelease);
-  json.addElem("main", this->main);
-  json.addElem("hasFS", this->hasFS);
-  json.addElem("hwVersions", this->hwVersions);
-  json.beginObject("version");
-  this->version.toJSON(json);
-  json.endObject();
-}
 #define ERR_CLIENT_OFFSET -50
 
 int16_t GitRepo::getReleases(uint8_t num) {
@@ -230,22 +214,6 @@ int16_t GitRepo::getReleases(uint8_t num) {
   settings.printAvailHeap();
   return 0;
 }
-void GitRepo::toJSON(JsonResponse &json) {
-  json.beginObject("fwVersion");
-  settings.fwVersion.toJSON(json);
-  json.endObject();
-  json.beginObject("appVersion");
-  settings.appVersion.toJSON(json);
-  json.endObject();
-  json.beginArray("releases");
-  for(uint8_t i = 0; i < GIT_MAX_RELEASES + 1; i++) {
-    if(this->releases[i].id == 0) continue;
-    json.beginObject();
-    this->releases[i].toJSON(json);
-    json.endObject();
-  }
-  json.endArray();
-}
 #define UPDATE_ERR_OFFSET 20
 #define ERR_DOWNLOAD_HTTP -40
 #define ERR_DOWNLOAD_BUFFER -41
@@ -309,23 +277,6 @@ void GitUpdater::setCurrentRelease(GitRepo &repo) {
     break;
   }
   this->emitUpdateCheck();
-}
-void GitUpdater::toJSON(JsonResponse &json) {
-  json.addElem("available", this->updateAvailable);
-  json.addElem("status", this->status);
-  json.addElem("error", (int32_t)this->error);
-  json.addElem("cancelled", this->cancelled);
-  json.addElem("checkForUpdate", settings.checkForUpdate);
-  json.addElem("inetAvailable", this->inetAvailable);
-  json.beginObject("fwVersion");
-  settings.fwVersion.toJSON(json);
-  json.endObject();
-  json.beginObject("appVersion");
-  settings.appVersion.toJSON(json);
-  json.endObject();
-  json.beginObject("latest");
-  this->latest.toJSON(json);
-  json.endObject();
 }
 void GitUpdater::emitUpdateCheck(uint8_t num) {
   JsonSockEvent *json = sockEmit.beginEmit("fwStatus");

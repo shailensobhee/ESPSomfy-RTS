@@ -1,7 +1,6 @@
 #include <Preferences.h>
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
 #include <SPI.h>
-#include <WebServer.h>
 #include <esp_task_wdt.h>
 #include "Utils.h"
 #include "ConfigSettings.h"
@@ -156,9 +155,9 @@ void somfy_frame_t::decodeFrame(byte* frame) {
         this->proto = radio_proto::RTV;
         this->cmd = (somfy_commands)(this->encKey - 148);
       }
-      else if(this->encKey > 133) {
+      else if(this->encKey >= 133) {
         this->proto = radio_proto::RTW;
-        this->cmd = (somfy_commands)(this->encKey - 133);
+        this->cmd = this->encKey == 133 ? somfy_commands::My : (somfy_commands)(this->encKey - 133);
       }
     }
     else this->proto = radio_proto::RTS;
@@ -633,8 +632,10 @@ void SomfyShadeController::commit() {
 void SomfyShadeController::writeBackup() {
   if(git.lockFS) return;
   esp_task_wdt_reset(); // Make sure we don't reset inadvertently.
+  this->backupData = "";
+  this->backupData.reserve(16384);
   ShadeConfigFile file;
-  file.begin("/controller.backup", false);
+  file.beginRAM(&this->backupData);
   file.backup(this);
   file.end();
 }
@@ -1445,9 +1446,9 @@ void SomfyRoom::unpublish() {
 }
 void SomfyShade::publishState() {
   if(mqtt.connected()) {
-    this->publish("position", this->transformPosition(this->currentPos), true);
-    this->publish("direction", this->direction, true);
-    this->publish("target", this->transformPosition(this->target), true);
+    this->publish("position", (uint8_t)50, true);
+    this->publish("direction", (int8_t)0, true);
+    this->publish("target", (uint8_t)50, true);
     this->publish("lastRollingCode", this->lastRollingCode);
     this->publish("mypos", this->transformPosition(this->myPos), true);
     this->publish("myTiltPos", this->transformPosition(this->myTiltPos), true);
@@ -1794,7 +1795,7 @@ bool SomfyGroup::publish(const char *topic, bool val, bool retain) {
 float SomfyShade::p_currentPos(float pos) {
   float old = this->currentPos;
   this->currentPos = pos;
-  if(floor(old) != floor(pos)) this->publish("position", this->transformPosition(static_cast<uint8_t>(floor(this->currentPos))));
+  if(floor(old) != floor(pos)) this->publish("position", (uint8_t)50);
   return old;
 }
 float SomfyShade::p_currentTiltPos(float pos) {
@@ -2888,9 +2889,21 @@ void SomfyShade::moveToMyPosition() {
 }
 void SomfyShade::sendCommand(somfy_commands cmd) { this->sendCommand(cmd, this->repeats); }
 void SomfyShade::sendCommand(somfy_commands cmd, uint8_t repeat, uint8_t stepSize) {
+  Serial.print("Send command start\n");
   // This sendCommand function will always be called externally. sendCommand at the remote level
   // is expected to be called internally when the motor needs commanded.
   if(this->bitLength == 0) this->bitLength = somfy.transceiver.config.type;
+  // If same direction command sent while already moving, stop the state tracking.
+  // The real motor stops on its own when it receives the same direction again.
+  if((cmd == somfy_commands::Up && this->direction == -1) ||
+     (cmd == somfy_commands::Down && this->direction == 1)) {
+    Serial.println("Same command as dir");
+    SomfyRemote::sendCommand(cmd, repeat);
+    this->p_target(this->currentPos);
+    this->p_tiltTarget(this->currentTiltPos);
+    this->setMovement(0);
+    return;
+  }
   if(cmd == somfy_commands::Up) {
     if(this->tiltType == tilt_types::euromode) {
       // In euromode we need to long press for 2 seconds on the
@@ -2930,9 +2943,13 @@ void SomfyShade::sendCommand(somfy_commands cmd, uint8_t repeat, uint8_t stepSiz
   else if(cmd == somfy_commands::My) {
     if(this->isToggle() || this->shadeType == shade_types::drycontact)
       SomfyRemote::sendCommand(cmd, repeat);
-    else if(this->shadeType == shade_types::drycontact2) return;   
+    else if(this->shadeType == shade_types::drycontact2){ 
+        Serial.print("Send command start 1\n");
+      return;   
+    }
     else if(this->isIdle()) {
-      this->moveToMyPosition();      
+      this->moveToMyPosition();  
+        Serial.print("Send command end 2\n");    
       return;
     }
     else {
@@ -2951,6 +2968,7 @@ void SomfyShade::sendCommand(somfy_commands cmd, uint8_t repeat, uint8_t stepSiz
   else {
     SomfyRemote::sendCommand(cmd, repeat, stepSize);
   }
+  Serial.print("Send command end\n");
 }
 void SomfyGroup::sendCommand(somfy_commands cmd) { this->sendCommand(cmd, this->repeats); }
 void SomfyGroup::sendCommand(somfy_commands cmd, uint8_t repeat, uint8_t stepSize) {
@@ -3309,72 +3327,6 @@ int8_t SomfyShade::fromJSON(JsonObject &obj) {
   }
   return err;
 }
-void SomfyShade::toJSONRef(JsonResponse &json) {
-  json.addElem("shadeId", this->getShadeId());
-  json.addElem("roomId", this->roomId);
-  json.addElem("name", this->name);
-  json.addElem("remoteAddress", (uint32_t)this->m_remoteAddress);
-  json.addElem("paired", this->paired);
-  json.addElem("shadeType", static_cast<uint8_t>(this->shadeType));
-  json.addElem("flipCommands", this->flipCommands);
-  json.addElem("flipPosition", this->flipCommands);
-  json.addElem("bitLength", this->bitLength);
-  json.addElem("proto", static_cast<uint8_t>(this->proto));
-  json.addElem("flags", this->flags);
-  json.addElem("sunSensor", this->hasSunSensor());
-  json.addElem("hasLight", this->hasLight());
-  json.addElem("repeats", this->repeats);
-  //SomfyRemote::toJSON(json);
-}
-
-void SomfyShade::toJSON(JsonResponse &json) {
-  json.addElem("shadeId", this->getShadeId());
-  json.addElem("roomId", this->roomId);
-  json.addElem("name", this->name);
-  json.addElem("remoteAddress", (uint32_t)this->m_remoteAddress);
-  json.addElem("upTime", (uint32_t)this->upTime);
-  json.addElem("downTime", (uint32_t)this->downTime);
-  json.addElem("paired", this->paired);
-  json.addElem("lastRollingCode", (uint32_t)this->lastRollingCode);
-  json.addElem("position", this->transformPosition(this->currentPos));
-  json.addElem("tiltType", static_cast<uint8_t>(this->tiltType));
-  json.addElem("tiltPosition", this->transformPosition(this->currentTiltPos));
-  json.addElem("tiltDirection", this->tiltDirection);
-  json.addElem("tiltTime", (uint32_t)this->tiltTime);
-  json.addElem("stepSize", (uint32_t)this->stepSize);
-  json.addElem("tiltTarget", this->transformPosition(this->tiltTarget));
-  json.addElem("target", this->transformPosition(this->target));
-  json.addElem("myPos", this->transformPosition(this->myPos));
-  json.addElem("myTiltPos", this->transformPosition(this->myTiltPos));
-  json.addElem("direction", this->direction);
-  json.addElem("shadeType", static_cast<uint8_t>(this->shadeType));
-  json.addElem("bitLength", this->bitLength);
-  json.addElem("proto", static_cast<uint8_t>(this->proto));
-  json.addElem("flags", this->flags);
-  json.addElem("flipCommands", this->flipCommands);
-  json.addElem("flipPosition", this->flipPosition);
-  json.addElem("inGroup", this->isInGroup());
-  json.addElem("sunSensor", this->hasSunSensor());
-  json.addElem("light", this->hasLight());
-  json.addElem("repeats", this->repeats);
-  json.addElem("sortOrder", this->sortOrder);  
-  json.addElem("gpioUp", this->gpioUp);
-  json.addElem("gpioDown", this->gpioDown);
-  json.addElem("gpioMy", this->gpioMy);
-  json.addElem("gpioLLTrigger", ((this->gpioFlags & (uint8_t)gpio_flags_t::LowLevelTrigger) == 0) ? false : true);
-  json.addElem("simMy", this->simMy());
-  json.beginArray("linkedRemotes");
-  for(uint8_t i = 0; i < SOMFY_MAX_LINKED_REMOTES; i++) {
-    SomfyLinkedRemote &lremote = this->linkedRemotes[i];
-    if(lremote.getRemoteAddress() != 0) {
-      json.beginObject();
-      lremote.toJSON(json);
-      json.endObject();
-    }
-  }
-  json.endArray();
-}
-
 /*
 bool SomfyShade::toJSON(JsonObject &obj) {
   //Serial.print("Serializing Shade:");
@@ -3442,12 +3394,6 @@ bool SomfyRoom::toJSON(JsonObject &obj) {
   return true;
 }
 */
-void SomfyRoom::toJSON(JsonResponse &json) {
-  json.addElem("roomId", this->roomId);
-  json.addElem("name", this->name);
-  json.addElem("sortOrder", this->sortOrder);
-}
-
 bool SomfyGroup::fromJSON(JsonObject &obj) {
   if(obj.containsKey("name")) strlcpy(this->name, obj["name"], sizeof(this->name));
   if(obj.containsKey("roomId")) this->roomId = obj["roomId"];
@@ -3469,50 +3415,6 @@ bool SomfyGroup::fromJSON(JsonObject &obj) {
   }
   return true;
 }
-void SomfyGroup::toJSON(JsonResponse &json) {
-  this->updateFlags();
-  json.addElem("groupId", this->getGroupId());
-  json.addElem("roomId", this->roomId);
-  json.addElem("name", this->name);
-  json.addElem("remoteAddress", (uint32_t)this->m_remoteAddress);
-  json.addElem("lastRollingCode", (uint32_t)this->lastRollingCode);
-  json.addElem("bitLength", this->bitLength);
-  json.addElem("proto", static_cast<uint8_t>(this->proto));
-  json.addElem("sunSensor", this->hasSunSensor());
-  json.addElem("flipCommands", this->flipCommands);
-  json.addElem("flags", this->flags);
-  json.addElem("repeats", this->repeats);
-  json.addElem("sortOrder", this->sortOrder);
-  json.beginArray("linkedShades");
-  for(uint8_t i = 0; i < SOMFY_MAX_GROUPED_SHADES; i++) {
-    uint8_t shadeId = this->linkedShades[i];
-    if(shadeId > 0 && shadeId < 255) {
-      SomfyShade *shade = somfy.getShadeById(shadeId);
-      if(shade) {
-        json.beginObject();
-        shade->toJSONRef(json);
-        json.endObject();
-      }
-    }
-  }
-  json.endArray();
-}
-void SomfyGroup::toJSONRef(JsonResponse &json) {
-  this->updateFlags();
-  json.addElem("groupId", this->getGroupId());
-  json.addElem("roomId", this->roomId);
-  json.addElem("name", this->name);
-  json.addElem("remoteAddress", (uint32_t)this->m_remoteAddress);
-  json.addElem("lastRollingCode", (uint32_t)this->lastRollingCode);
-  json.addElem("bitLength", this->bitLength);
-  json.addElem("proto", static_cast<uint8_t>(this->proto));
-  json.addElem("sunSensor", this->hasSunSensor());
-  json.addElem("flipCommands", this->flipCommands);
-  json.addElem("flags", this->flags);
-  json.addElem("repeats", this->repeats);
-  json.addElem("sortOrder", this->sortOrder);
-}
-
 /*
 bool SomfyGroup::toJSON(JsonObject &obj) {
   this->updateFlags();
@@ -3544,10 +3446,6 @@ bool SomfyGroup::toJSON(JsonObject &obj) {
 }
 */
 
-void SomfyRemote::toJSON(JsonResponse &json) {
-  json.addElem("remoteAddress", (uint32_t)this->getRemoteAddress());
-  json.addElem("lastRollingCode", (uint32_t)this->lastRollingCode);
-}
 /*
 bool SomfyRemote::toJSON(JsonObject &obj) {
   //obj["remotePrefId"] = this->getRemotePrefId();
@@ -3571,6 +3469,7 @@ void SomfyShadeController::emitState(uint8_t num) {
   for(uint8_t i = 0; i < SOMFY_MAX_SHADES; i++) {
     SomfyShade *shade = &this->shades[i];
     if(shade->getShadeId() == 255) continue;
+    esp_task_wdt_reset();
     shade->emitState(num);
   }
 }
@@ -4111,26 +4010,6 @@ uint16_t SomfyRemote::setRollingCode(uint16_t code) {
   }
   return code;
 }
-void SomfyShadeController::toJSONRooms(JsonResponse &json) {
-  for(uint8_t i = 0; i < SOMFY_MAX_ROOMS; i++) {
-    SomfyRoom *room = &this->rooms[i];
-    if(room->roomId != 0) {
-      json.beginObject();
-      room->toJSON(json);
-      json.endObject();
-    }
-  }
-}
-void SomfyShadeController::toJSONShades(JsonResponse &json) {
-  for(uint8_t i = 0; i < SOMFY_MAX_SHADES; i++) {
-    SomfyShade &shade = this->shades[i];
-    if(shade.getShadeId() != 255) {
-      json.beginObject();
-      shade.toJSON(json);
-      json.endObject();
-    }
-  }
-}
 
 /*
 bool SomfyShadeController::toJSON(DynamicJsonDocument &doc) {
@@ -4185,21 +4064,6 @@ bool SomfyShadeController::toJSONGroups(JsonArray &arr) {
   return true;
 }
 */
-void SomfyShadeController::toJSONGroups(JsonResponse &json) {
-  for(uint8_t i = 0; i < SOMFY_MAX_GROUPS; i++) {
-    SomfyGroup &group = this->groups[i];
-    if(group.getGroupId() != 255) {
-      json.beginObject();
-      group.toJSON(json);
-      json.endObject();
-    }
-  }
-}
-void SomfyShadeController::toJSONRepeaters(JsonResponse &json) {
-  for(uint8_t i = 0; i < SOMFY_MAX_REPEATERS; i++) {
-    if(somfy.repeaters[i] != 0) json.addElem((uint32_t)somfy.repeaters[i]);
-  }
-}
 void SomfyShadeController::loop() { 
   this->transceiver.loop(); 
   for(uint8_t i = 0; i < SOMFY_MAX_SHADES; i++) {
@@ -4683,11 +4547,6 @@ void Transceiver::disableReceive(void) {
   interruptPin = 0;
   
 }
-void Transceiver::toJSON(JsonResponse& json) {
-    json.beginObject("config");
-    this->config.toJSON(json);
-    json.endObject();
-}
 /*
 bool Transceiver::toJSON(JsonObject& obj) {
     //Serial.println("Setting Transceiver Json");
@@ -4765,22 +4624,6 @@ void transceiver_config_t::fromJSON(JsonObject& obj) {
     if (obj.containsKey("printBuffer")) this->printBuffer = obj["printBuffer"];
     */
     Serial.printf("SCK:%u MISO:%u MOSI:%u CSN:%u RX:%u TX:%u\n", this->SCKPin, this->MISOPin, this->MOSIPin, this->CSNPin, this->RXPin, this->TXPin);
-}
-void transceiver_config_t::toJSON(JsonResponse &json) {
-    json.addElem("type", this->type);
-    json.addElem("TXPin", this->TXPin);
-    json.addElem("RXPin", this->RXPin);
-    json.addElem("SCKPin", this->SCKPin);
-    json.addElem("MOSIPin", this->MOSIPin);
-    json.addElem("MISOPin", this->MISOPin);
-    json.addElem("CSNPin", this->CSNPin);
-    json.addElem("rxBandwidth", this->rxBandwidth); // float
-    json.addElem("frequency", this->frequency);  // float
-    json.addElem("deviation", this->deviation);  // float
-    json.addElem("txPower", this->txPower);
-    json.addElem("proto", static_cast<uint8_t>(this->proto));
-    json.addElem("enabled", this->enabled);
-    json.addElem("radioInit", this->radioInit);
 }
 /*
 void transceiver_config_t::toJSON(JsonObject& obj) {

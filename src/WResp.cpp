@@ -1,5 +1,5 @@
 #include "WResp.h"
-void JsonSockEvent::beginEvent(WebSocketsServer *server, const char *evt, char *buff, size_t buffSize) {
+void JsonSockEvent::beginEvent(AsyncWebSocket *server, const char *evt, char *buff, size_t buffSize) {
   this->server = server;
   this->buff = buff;
   this->buffSize = buffSize;
@@ -15,10 +15,10 @@ void JsonSockEvent::closeEvent() {
   this->_nocomma = true;
   this->_closed = true;
 }
-void JsonSockEvent::endEvent(uint8_t num) {
+void JsonSockEvent::endEvent(uint32_t clientId) {
   this->closeEvent();
-  if(num == 255) this->server->broadcastTXT(this->buff);
-  else this->server->sendTXT(num, this->buff);
+  if(clientId == 0) this->server->textAll(this->buff);
+  else this->server->text(clientId, this->buff);
 }
 void JsonSockEvent::_safecat(const char *val, bool escape) {
   size_t len = (escape ? this->calcEscapedLength(val) : strlen(val)) + strlen(this->buff);
@@ -33,30 +33,32 @@ void JsonSockEvent::_safecat(const char *val, bool escape) {
   else strcat(this->buff, val);
   if(escape) strcat(this->buff, "\"");
 }
-void JsonResponse::beginResponse(WebServer *server, char *buff, size_t buffSize) {
-  this->server = server;
+void AsyncJsonResp::beginResponse(AsyncWebServerRequest *request, char *buff, size_t buffSize) {
+  this->_request = request;
   this->buff = buff;
   this->buffSize = buffSize;
   this->buff[0] = 0x00;
   this->_nocomma = true;
-  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  this->_headersSent = false;
+  this->_stream = request->beginResponseStream("application/json");
 }
-void JsonResponse::endResponse() {
-  if(strlen(buff)) this->send();
-  server->sendContent("", 0);
+void AsyncJsonResp::endResponse() {
+  if(strlen(this->buff)) this->flush();
+  if(this->_request && this->_stream) {
+    this->_request->send(this->_stream);
+  }
 }
-void JsonResponse::send() {
-    if(!this->_headersSent) server->send_P(200, "application/json", this->buff);
-    else server->sendContent(this->buff);
-    //Serial.printf("Sent %d bytes %d\n", strlen(this->buff), this->buffSize);
+void AsyncJsonResp::flush() {
+  if(this->_stream && strlen(this->buff) > 0) {
+    this->_stream->print(this->buff);
     this->buff[0] = 0x00;
-    this->_headersSent = true;
+  }
 }
-void JsonResponse::_safecat(const char *val, bool escape) {
+void AsyncJsonResp::_safecat(const char *val, bool escape) {
   size_t len = (escape ? this->calcEscapedLength(val) : strlen(val)) + strlen(this->buff);
   if(escape) len += 2;
   if(len >= this->buffSize) {
-    this->send();
+    this->flush();
   }
   if(escape) strcat(this->buff, "\"");
   if(escape) this->escapeString(val, &this->buff[strlen(this->buff)]);
@@ -130,8 +132,9 @@ void JsonFormatter::addElem(const char *name, uint32_t nval) { sprintf(this->_nu
 void JsonFormatter::addElem(const char *name, int16_t nval) { sprintf(this->_numbuff, "%d", nval); this->_appendNumber(name); }
 void JsonFormatter::addElem(const char *name, uint16_t nval) { sprintf(this->_numbuff, "%u", nval); this->_appendNumber(name); }
 void JsonFormatter::addElem(const char *name, int64_t lval) { sprintf(this->_numbuff, "%lld", (long long)lval); this->_appendNumber(name); }
-void JsonFormatter::addElem(const char *name, uint64_t lval) { sprintf(this->_numbuff, "%llu", (unsigned long long)lval); this->_appendNumber(name); }
 */
+void JsonFormatter::addElem(const char *name, uint64_t lval) { sprintf(this->_numbuff, "%llu", (unsigned long long)lval); this->_appendNumber(name); }
+
 void JsonFormatter::addElem(const char *name, bool bval) { strcpy(this->_numbuff, bval ? "true" : "false"); this->_appendNumber(name); }
 
 void JsonFormatter::_safecat(const char *val, bool escape) {
