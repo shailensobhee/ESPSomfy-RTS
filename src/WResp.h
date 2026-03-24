@@ -3,8 +3,6 @@
 #ifndef wresp_h
 #define wresp_h
 
-class WebServer;
-
 class JsonFormatter {
   protected:
     char *buff;
@@ -53,15 +51,6 @@ class JsonFormatter {
     void addElem(const char* name, bool bval);
     void addElem(const char *name, const char *val);
     void addElem(const char* name, uint64_t lval);
-};
-class JsonResponse : public JsonFormatter {
-  protected:
-    void _safecat(const char *val, bool escape = false) override;
-  public:
-    WebServer *server;
-    void beginResponse(WebServer *server, char *buff, size_t buffSize);
-    void endResponse();
-    void send();
 };
 class AsyncJsonResp : public JsonFormatter {
   protected:

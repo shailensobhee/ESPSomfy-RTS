@@ -1,6 +1,4 @@
 #include "WResp.h"
-#include <WebServer.h>
-#include <esp_task_wdt.h>
 void JsonSockEvent::beginEvent(AsyncWebSocket *server, const char *evt, char *buff, size_t buffSize) {
   this->server = server;
   this->buff = buff;
@@ -35,41 +33,6 @@ void JsonSockEvent::_safecat(const char *val, bool escape) {
   else strcat(this->buff, val);
   if(escape) strcat(this->buff, "\"");
 }
-void JsonResponse::beginResponse(WebServer *server, char *buff, size_t buffSize) {
-  this->server = server;
-  this->buff = buff;
-  this->buffSize = buffSize;
-  this->buff[0] = 0x00;
-  this->_nocomma = true;
-  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
-}
-void JsonResponse::endResponse() {
-  if(strlen(buff)) this->send();
-  server->sendContent("", 0);
-}
-void JsonResponse::send() {
-    Serial.println("JsonResponse::send start ");
-    unsigned long ts = millis();
-    esp_task_wdt_reset();
-    if(!this->_headersSent) server->send_P(200, "application/json", this->buff);
-    else server->sendContent(this->buff);
-    //Serial.printf("Sent %d bytes %d\n", strlen(this->buff), this->buffSize);
-    this->buff[0] = 0x00;
-    this->_headersSent = true;
-    Serial.printf("JsonResponse::send end took %d ms\n", millis() - ts);
-}
-void JsonResponse::_safecat(const char *val, bool escape) {
-  size_t len = (escape ? this->calcEscapedLength(val) : strlen(val)) + strlen(this->buff);
-  if(escape) len += 2;
-  if(len >= this->buffSize) {
-    this->send();
-  }
-  if(escape) strcat(this->buff, "\"");
-  if(escape) this->escapeString(val, &this->buff[strlen(this->buff)]);
-  else strcat(this->buff, val);
-  if(escape) strcat(this->buff, "\"");
-}
-
 void AsyncJsonResp::beginResponse(AsyncWebServerRequest *request, char *buff, size_t buffSize) {
   this->_request = request;
   this->buff = buff;

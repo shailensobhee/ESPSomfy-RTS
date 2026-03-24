@@ -63,8 +63,6 @@ void Web::startup() {
 void Web::loop() {
   delay(1);
 }
-void Web::end() {
-}
 bool Web::isAuthenticated(AsyncWebServerRequest *request, bool cfg) {
   Serial.println("Checking async authentication");
   if(settings.Security.type == security_types::None) return true;

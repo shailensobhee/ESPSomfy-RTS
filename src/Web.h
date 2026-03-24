@@ -9,7 +9,6 @@ class Web {
     void startup();
     void begin();
     void loop();
-    void end();
     // Auth helpers
     bool createAPIToken(const IPAddress ipAddress, char *token);
     bool createAPIToken(const char *payload, char *token);
