@@ -9,6 +9,7 @@ SomfyController.ino.esp32c3.bin
 SomfyController.ino.esp32s2.bin
 .vscode/
 .pio/
+.claude/
 data/
 build/
 coredump_report.txt
