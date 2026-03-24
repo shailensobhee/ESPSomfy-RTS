@@ -4335,7 +4335,7 @@ class Firmware {
                 if (typeof overlay !== 'undefined') overlay.remove();
                 reject({ htmlError: status, service: 'GET /backup' });
             };
-            xhr.open('GET', baseUrl.length > 0 ? `${baseUrl}/backup` : '/backup', true);
+            xhr.open('GET', baseUrl.length > 0 ? `${baseUrl}/backup?attach=true` : '/backup?attach=true', true);
             xhr.send();
         });
     }
@@ -4386,7 +4386,19 @@ class Firmware {
         sp = document.getElementById('spanMinMemory');
         if (sp) sp.innerHTML = mem.min.fmt('#,##0');
         sp = document.getElementById('spanUptime');
-        if (sp) sp.innerHTML = mem.uptime / 3600000;
+        if (sp) {
+            let t = Math.floor(mem.uptime / 1000);
+            let d = Math.floor(t / 86400); t %= 86400;
+            let h = Math.floor(t / 3600); t %= 3600;
+            let m = Math.floor(t / 60);
+            let s = t % 60;
+            let parts = [];
+            if (d > 0) parts.push(d + 'd');
+            if (h > 0) parts.push(h + 'h');
+            if (m > 0) parts.push(m + 'm');
+            if (s > 0 || parts.length === 0) parts.push(s + 's');
+            sp.innerHTML = parts.join(' ');
+        }
 
 
     }
