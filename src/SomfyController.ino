@@ -52,6 +52,7 @@ void setup() {
     ESP_LOGW(TAG, "*** Previous crash coredump found ***");
     ESP_LOGW(TAG, "  Task: %s", summary.exc_task);
     ESP_LOGW(TAG, "  PC: 0x%08x", summary.exc_pc);
+#ifdef CONFIG_IDF_TARGET_ARCH_XTENSA
     ESP_LOGW(TAG, "  Cause: %d", summary.ex_info.exc_cause);
     char bt_buf[256] = {0};
     int pos = 0;
@@ -59,6 +60,11 @@ void setup() {
       pos += snprintf(bt_buf + pos, sizeof(bt_buf) - pos, " 0x%08x", summary.exc_bt_info.bt[i]);
     }
     ESP_LOGW(TAG, "  Backtrace:%s", bt_buf);
+#elif CONFIG_IDF_TARGET_ARCH_RISCV
+    ESP_LOGW(TAG, "  Cause: %d", summary.ex_info.mcause);
+    ESP_LOGW(TAG, "  MTVAL: 0x%08x  RA: 0x%08x  SP: 0x%08x",
+             summary.ex_info.mtval, summary.ex_info.ra, summary.ex_info.sp);
+#endif
   }
   ESP_LOGI(TAG, "Mounting File System...");
 
