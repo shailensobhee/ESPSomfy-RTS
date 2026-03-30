@@ -1267,9 +1267,27 @@ class Security {
 }
 var security = new Security();
 
+// let appVersion = 'v0.0.0'; // Default placeholder
+async function getAppVersion() {
+    try {
+        const response = await fetch('/appversion');
+        if (!response.ok) throw new Error('File not found');
+        
+        const data = await response.text();
+        appVersion = `v${data.trim()}`;
+        
+        console.log("Loaded Version:", appVersion);
+        // Trigger any UI updates here
+    } catch (error) {
+        console.error("Error loading App version:", error);
+        appVersion = 'v0.0.0'; // Default placeholder
+    }
+    return appVersion;
+}
+
 class General {
     initialized = false; 
-    appVersion = 'v2.4.8';
+    appVersion = getAppVersion();
     reloadApp = false;
     init() {
         if (this.initialized) return;
@@ -4814,4 +4832,16 @@ class Firmware {
     }
 }
 var firmware = new Firmware();
+
+window.addEventListener('load', async () => {
+    // 1. Initialize your main application logic
+    // await init(); 
+    
+    // 2. Fetch and display the app version
+    appVersion = await getAppVersion();
+    const spanAppVersion = document.getElementById('spanAppVersion');
+    spanAppVersion.innerText = `${appVersion.trim()}`;
+    
+    console.log("Application fully loaded and version updated.");
+});
 

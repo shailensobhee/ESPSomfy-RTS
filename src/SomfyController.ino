@@ -92,8 +92,10 @@ void setup() {
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
   const esp_task_wdt_config_t wdt_config = { .timeout_ms = 15000, .idle_core_mask = 1, .trigger_panic = true };
   esp_task_wdt_init(&wdt_config);
+  ESP_LOGE(TAG, "TEST 1");
 #else
   esp_task_wdt_init(15, true); //enable panic so ESP32 restarts
+  ESP_LOGE(TAG, "TEST 2");
 #endif
   esp_task_wdt_add(NULL); //add current thread to WDT watch
 
