@@ -95,8 +95,14 @@ jobs:
       - name: Build LittleFS image
         run: pio run -e ${{ matrix.env }} -t buildfs
 
+      - name: Save LittleFS image
+        run: cp .pio/build/${{ matrix.env }}/littlefs.bin littlefs.bin
+
       - name: Build firmware
         run: pio run -e ${{ matrix.env }}
+
+      - name: Restore LittleFS image
+        run: cp littlefs.bin .pio/build/${{ matrix.env }}/littlefs.bin
 
       - name: List build artifacts
         run: find .pio/build/${{ matrix.env }} -maxdepth 1 -name "*.bin" | sort
