@@ -8,6 +8,8 @@
   * Added uptime info in web UI
 
 ## There is a partition layout modification it's just better to perform full ESP32 wipeout. Perform backup then wipeout the firmware and restore from the bkp.
+  * fwname: firmware-only binary for OTA updates
+  * obname: onboard image (bootloader + partitions + firmware + littlefs merged) for flashing a new chip via USB/serial
 
 # ESPSomfy-RTS <image src="https://user-images.githubusercontent.com/47839015/218898940-3541b360-5c49-4e38-a918-392cd0408b76.png" align="right" style="width:177px;display:inline-block;float:right"></image>
 
