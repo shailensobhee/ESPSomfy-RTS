@@ -15,5 +15,9 @@ build/
 coredump_report.txt
 coredump.bin
 logs/
+
+# Ignore ELF binary archives
 elf_archive/
+*.elf
+
 managed_components/
