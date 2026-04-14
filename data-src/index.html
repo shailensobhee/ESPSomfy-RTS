@@ -1104,6 +1104,9 @@
                         case 'divNetworkSettings':
                             wifi.loadNetwork();
                             break;
+                        case 'divSensorsSettings':
+                            hcsr04.loadSettings();
+                            break;
                     }
                     let grp = document.getElementById(tab.getAttribute('data-grpid'));
                     if (typeof grp !== 'undefined' && grp) grp.style.display = '';
