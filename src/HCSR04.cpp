@@ -160,7 +160,7 @@ void HCSR04Class::publishDisco() {
     dobj["name"]       = settings.hostname;
     dobj["mf"]         = "rstrouse";
     dobj["model"]      = "ESPSomfy-RTS MQTT";
-    char devId[32];
+    char devId[48]; // must outlive JsonObject serialisation — same stack frame
     snprintf(devId, sizeof(devId), "mqtt_espsomfyrts_%s", settings.serverId);
     JsonArray ids = dobj["identifiers"].to<JsonArray>();
     ids.add(devId);
@@ -185,12 +185,16 @@ void HCSR04Class::publishDisco() {
     obj["payload_available"]     = "online";
     obj["payload_not_available"] = "offline";
 
+    if (doc.overflowed()) {
+        ESP_LOGE(TAG, "HC-SR04 discovery JSON overflowed — not publishing");
+        return;
+    }
     mqtt.publishDisco(topic, obj, true);
     ESP_LOGI(TAG, "Published HC-SR04 HA discovery");
 }
 
 void HCSR04Class::unpublishDisco() {
-    if (!mqtt.connected()) return;
+    if (!mqtt.connected() || !settings.MQTT.pubDisco) return;
     char topic[128];
     snprintf(topic, sizeof(topic), "%s/sensor/espsomfy_%s_distance/config",
              settings.MQTT.discoTopic, settings.serverId);
