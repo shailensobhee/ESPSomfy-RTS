@@ -10,6 +10,7 @@
 #include "Somfy.h"
 #include "MQTT.h"
 #include "GitOTA.h"
+#include "HCSR04.h"
 #include "esp_core_dump.h"
 
 static const char *TAG = "Main";
@@ -22,6 +23,7 @@ rebootDelay_t rebootDelay;
 SomfyShadeController somfy;
 MQTTClass mqtt;
 GitUpdater git;
+extern HCSR04Class hcsr04;
 
 uint32_t oldheap = 0;
 
@@ -88,6 +90,7 @@ void setup() {
   delay(1000);
   net.setup();  
   somfy.begin();
+  hcsr04.begin();  // no-op if disabled or pins not configured
   //git.checkForUpdate();
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
   const esp_task_wdt_config_t wdt_config = { .timeout_ms = 15000, .idle_core_mask = 1, .trigger_panic = true };
@@ -115,6 +118,7 @@ void loop() {
   timing = millis();
   esp_task_wdt_reset();
   somfy.loop();
+  hcsr04.loop();  // no-op if not active
   if(millis() - timing > 100) ESP_LOGD(TAG, "Timing Somfy: %ldms", millis() - timing);
   timing = millis();
   esp_task_wdt_reset();
