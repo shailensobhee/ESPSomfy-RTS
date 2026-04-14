@@ -144,4 +144,57 @@ bool HCSR04Class::usesPin(uint8_t pin) {
     return (pin == settings.HCSR04.trigPin || pin == settings.HCSR04.echoPin);
 }
 
+void HCSR04Class::publishDisco() {
+    if (!mqtt.connected() || !settings.MQTT.pubDisco || !settings.HCSR04.enabled) return;
+
+    char topic[128];
+    snprintf(topic, sizeof(topic), "%s/sensor/espsomfy_%s_distance/config",
+             settings.MQTT.discoTopic, settings.serverId);
+
+    JsonDocument doc;
+    JsonObject obj = doc.to<JsonObject>();
+
+    // Device block — links to same device as the shades
+    JsonObject dobj = obj["device"].to<JsonObject>();
+    dobj["hw_version"] = settings.fwVersion.name;
+    dobj["name"]       = settings.hostname;
+    dobj["mf"]         = "rstrouse";
+    dobj["model"]      = "ESPSomfy-RTS MQTT";
+    char devId[32];
+    snprintf(devId, sizeof(devId), "mqtt_espsomfyrts_%s", settings.serverId);
+    JsonArray ids = dobj["identifiers"].to<JsonArray>();
+    ids.add(devId);
+    dobj["via_device"] = devId;
+
+    // Sensor entity
+    char uniqueId[48];
+    snprintf(uniqueId, sizeof(uniqueId), "espsomfy_%s_distance", settings.serverId);
+    obj["unique_id"]           = uniqueId;
+    obj["name"]                = "Distance";
+    obj["device_class"]        = "distance";
+    obj["unit_of_measurement"] = "cm";
+
+    char stateTopic[128];
+    snprintf(stateTopic, sizeof(stateTopic), "%s/sensors/distance",
+             settings.MQTT.rootTopic);
+    obj["state_topic"] = stateTopic;
+
+    char availTopic[128];
+    snprintf(availTopic, sizeof(availTopic), "%s/status", settings.MQTT.rootTopic);
+    obj["availability_topic"]    = availTopic;
+    obj["payload_available"]     = "online";
+    obj["payload_not_available"] = "offline";
+
+    mqtt.publishDisco(topic, obj, true);
+    ESP_LOGI(TAG, "Published HC-SR04 HA discovery");
+}
+
+void HCSR04Class::unpublishDisco() {
+    if (!mqtt.connected()) return;
+    char topic[128];
+    snprintf(topic, sizeof(topic), "%s/sensor/espsomfy_%s_distance/config",
+             settings.MQTT.discoTopic, settings.serverId);
+    mqtt.unpublish(topic);
+}
+
 HCSR04Class hcsr04;

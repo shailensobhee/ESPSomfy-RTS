@@ -8,6 +8,7 @@
 #include "Somfy.h"
 #include "ESPNetwork.h"
 #include "Utils.h"
+#include "HCSR04.h"
 
 static const char *TAG = "MQTT";
 
@@ -21,6 +22,7 @@ extern ConfigSettings settings;
 extern SomfyShadeController somfy;
 extern ESPNetwork net;
 extern rebootDelay_t rebootDelay;
+extern HCSR04Class hcsr04;
 
 
 bool MQTTClass::begin() {
@@ -206,6 +208,7 @@ bool MQTTClass::connect() {
         this->publish("serverId", settings.serverId, true);
         this->publish("mac", net.mac.c_str());
         somfy.publish();
+        hcsr04.publishDisco();
         this->subscribe("shades/+/target/set");
         this->subscribe("shades/+/tiltTarget/set");
         this->subscribe("shades/+/direction/set");

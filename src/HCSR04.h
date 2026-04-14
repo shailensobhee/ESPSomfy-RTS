@@ -10,6 +10,8 @@ class HCSR04Class {
     void end();
     void loop();
     bool usesPin(uint8_t pin);
+    void publishDisco();
+    void unpublishDisco();
     float lastDistanceCm = -1.0f;  // -1 = no valid reading yet
   private:
     bool _active = false;
