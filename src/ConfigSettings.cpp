@@ -664,6 +664,7 @@ bool HCSR04Settings::begin() {
 }
 bool HCSR04Settings::save() {
   pref.begin("HCSR04");
+  pref.clear();
   pref.putBool("enabled", this->enabled);
   pref.putUChar("trigPin", this->trigPin);
   pref.putUChar("echoPin", this->echoPin);
