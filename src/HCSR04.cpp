@@ -194,7 +194,7 @@ void HCSR04Class::unpublishDisco() {
     char topic[128];
     snprintf(topic, sizeof(topic), "%s/sensor/espsomfy_%s_distance/config",
              settings.MQTT.discoTopic, settings.serverId);
-    mqtt.unpublish(topic);
+    mqtt.publishBuffer(topic, (uint8_t *)"", 0, true);
 }
 
 HCSR04Class hcsr04;
