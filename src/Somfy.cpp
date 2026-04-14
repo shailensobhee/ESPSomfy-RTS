@@ -12,6 +12,7 @@
 #include "MQTT.h"
 #include "ConfigFile.h"
 #include "GitOTA.h"
+#include "HCSR04.h"
 
 static const char *TAG = "Somfy";
 
@@ -3161,7 +3162,10 @@ int8_t SomfyShade::validateJSON(JsonObject &obj) {
       if(somfy.transceiver.config.enabled) {
         if((upPin != 255 && somfy.transceiver.usesPin(upPin)) ||
           (downPin != 255 && somfy.transceiver.usesPin(downPin)) ||
-          (myPin != 255 && somfy.transceiver.usesPin(myPin)))
+          (myPin != 255 && somfy.transceiver.usesPin(myPin)) ||
+          (upPin != 255 && hcsr04.usesPin(upPin)) ||
+          (downPin != 255 && hcsr04.usesPin(downPin)) ||
+          (myPin != 255 && hcsr04.usesPin(myPin)))
           ret = -10;
       }
 #ifndef CONFIG_IDF_TARGET_ESP32C6
