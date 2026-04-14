@@ -124,3 +124,5 @@ bool HCSR04Class::usesPin(uint8_t pin) {
     if (!settings.HCSR04.enabled) return false;
     return (pin == settings.HCSR04.trigPin || pin == settings.HCSR04.echoPin);
 }
+
+HCSR04Class hcsr04;

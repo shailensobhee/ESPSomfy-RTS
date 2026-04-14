@@ -14,7 +14,6 @@ class HCSR04Class {
   private:
     bool _active = false;
     esp_timer_handle_t _timer = nullptr;
-    uint32_t _lastPublishMs = 0;
 };
 
 extern HCSR04Class hcsr04;
