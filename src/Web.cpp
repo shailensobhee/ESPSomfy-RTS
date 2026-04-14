@@ -2367,14 +2367,16 @@ void Web::begin() {
         request->send(500, "application/json", "{\"status\":\"ERROR\",\"desc\":\"JSON parse error\"}");
         return;
       }
+      ESP_LOGI(TAG, "Reconfiguring HC-SR04");
       JsonObject obj = json.as<JsonObject>();
       hcsr04.end();
       settings.HCSR04.fromJSON(obj);
       settings.HCSR04.save();
-      hcsr04.begin();
+      bool started = hcsr04.begin();
       JsonDocument sdoc;
       JsonObject sobj = sdoc.to<JsonObject>();
       settings.HCSR04.toJSON(sobj);
+      sobj["started"] = started;
       serializeJson(sdoc, g_async_content, sizeof(g_async_content));
       request->send(200, _encoding_json, g_async_content);
     }));

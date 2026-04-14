@@ -43,6 +43,11 @@ bool HCSR04Class::begin() {
         ESP_LOGI(TAG, "HC-SR04 disabled or pins not configured — skipping");
         return false;
     }
+    // Reset any stale ISR state from a previous measurement cycle
+    s_echoReady  = false;
+    s_echoRiseUs = 0;
+    s_echoFallUs = 0;
+
     s_echoGpio = (gpio_num_t)settings.HCSR04.echoPin;
 
     // Configure TRIG as output
