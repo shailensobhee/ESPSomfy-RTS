@@ -638,6 +638,7 @@ async function init() {
     general.init();
     wifi.init();
     somfy.init();
+    hcsr04.init();
     mqtt.init();
     firmware.init();
 }
@@ -4242,6 +4243,44 @@ class Somfy {
     }
 }
 var somfy = new Somfy();
+class HCSR04 {
+    initialized = false;
+    init() { this.initialized = true; this.loadSettings(); }
+    loadSettings() {
+        getJSONSync('/hcsr04settings', (err, s) => {
+            if (err) return;
+            var pins = [255, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+            ['selHCSR04Trig', 'selHCSR04Echo'].forEach(function(id) {
+                var sel = document.getElementById(id);
+                if (!sel) return;
+                sel.innerHTML = '';
+                pins.forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p;
+                    opt.text = p === 255 ? '-- not set --' : 'GPIO ' + p;
+                    sel.appendChild(opt);
+                });
+            });
+            ui.toElement(document.getElementById('divSensorsSettings'), { hcsr04: s });
+            var div = document.getElementById('divHCSR04LastReading');
+            if (div && typeof s.lastDistanceCm === 'number' && s.lastDistanceCm >= 0) {
+                div.style.display = '';
+                div.textContent = 'Last reading: ' + s.lastDistanceCm.toFixed(1) + ' cm';
+            }
+        });
+    }
+    saveSettings() {
+        let obj = ui.fromElement(document.getElementById('divSensorsSettings'));
+        putJSONSync('/connecthcsr04', obj.hcsr04, (err) => {
+            if (err) {
+                ui.errorMessage('Failed to save sensor settings');
+                return;
+            }
+            ui.infoMessage('Sensor settings saved');
+        });
+    }
+}
+var hcsr04 = new HCSR04();
 class MQTT {
     initialized = false;
     init() { this.initialized = true; }

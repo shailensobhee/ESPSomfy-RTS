@@ -140,7 +140,7 @@
                         <div><span style="text-align:right;display:inline-block;width:57px;color:#00bcd4">Speed:</span><span id="spanEthernetSpeed" style="padding-left:4px;display:inline-block;text-align:left;width:120px;">--</span></div>
                     </div>
                 </div>
-                <div class="tab-container"><span class="selected" data-grpid="divSystemSettings">System</span><span data-grpid="divNetworkSettings">Network</span><span data-grpid="divSomfySettings">Somfy</span><span data-grpid="divRadioSettings">Radio</span></div>
+                <div class="tab-container"><span class="selected" data-grpid="divSystemSettings">System</span><span data-grpid="divNetworkSettings">Network</span><span data-grpid="divSomfySettings">Somfy</span><span data-grpid="divRadioSettings">Radio</span><span data-grpid="divSensorsSettings">Sensors</span></div>
                 <div id="divSystemSettings" class="tab-content">
                     <div class="subtab-container"><span class="selected" data-grpid="divSystemOptions">Options</span><span data-grpid="divSecurityOptions">Security</span><span data-grpid="divFirmware">Firmware</span></div>
                     <div id="divSystemOptions" class="subtab-content">
@@ -888,6 +888,41 @@
                             <div>
                                 <div class="button-outline" style="width:127px;text-align:center;border-radius:33%;font-size:2em;padding:10px;" data-cmd="Sensor" onmousedown="somfy.sendVRCommand(this);" ontouchstart="somfy.sendVRCommand(this);"><div class="button-sunflag" data-on="false" style="margin:0px;"></div><span>send</span></div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="divSensorsSettings" style="display:none;">
+                    <div class="subtab-container"><span class="selected" data-grpid="divHCSR04">HC-SR04 Distance</span></div>
+                    <div id="divHCSR04" class="subtab-content">
+                        <div class="field-group" style="vertical-align:middle;margin-top:-20px;">
+                            <input id="cbHCSR04Enabled" name="hcsr04-enabled" type="checkbox" data-bind="hcsr04.enabled" style="display:inline-block;" />
+                            <label for="cbHCSR04Enabled" style="display:inline-block;cursor:pointer;">Enable HC-SR04 Distance Sensor</label>
+                        </div>
+                        <div id="divHCSR04Config">
+                            <div style="font-size:0.8em;color:#888;margin-bottom:8px;">Use a 3.3V-compatible HC-SR04P. Standard HC-SR04 ECHO pin outputs 5V and requires a voltage divider.</div>
+                            <div class="field-group" style="width:45%;display:inline-block;margin-right:7px;">
+                                <select id="selHCSR04Trig" name="hcsr04-trig" data-bind="hcsr04.trigPin" data-datatype="int" style="width:100%;"></select>
+                                <label for="selHCSR04Trig">TRIG Pin</label>
+                            </div>
+                            <div class="field-group" style="width:45%;display:inline-block;">
+                                <select id="selHCSR04Echo" name="hcsr04-echo" data-bind="hcsr04.echoPin" data-datatype="int" style="width:100%;"></select>
+                                <label for="selHCSR04Echo">ECHO Pin</label>
+                            </div>
+                            <div class="field-group" style="width:45%;display:inline-block;margin-right:7px;">
+                                <select id="selHCSR04Interval" name="hcsr04-interval" data-bind="hcsr04.intervalSec" data-datatype="int" style="width:100%;">
+                                    <option value="1">1 second</option>
+                                    <option value="2">2 seconds</option>
+                                    <option value="5" selected>5 seconds</option>
+                                    <option value="10">10 seconds</option>
+                                    <option value="30">30 seconds</option>
+                                    <option value="60">60 seconds</option>
+                                </select>
+                                <label for="selHCSR04Interval">Read Interval</label>
+                            </div>
+                            <div id="divHCSR04LastReading" style="display:none;margin-top:8px;color:#00bcd4;font-size:0.9em;"></div>
+                        </div>
+                        <div class="button-container">
+                            <button id="btnSaveHCSR04" type="button" onclick="hcsr04.saveSettings();">Save Sensor Settings</button>
                         </div>
                     </div>
                 </div>
