@@ -186,6 +186,7 @@ bool ConfigSettings::begin() {
 #endif
   this->NTP.begin();
   this->MQTT.begin();
+  this->HCSR04.begin();
   this->print();
   return true;
 }
@@ -656,4 +657,40 @@ void ConfigSettings::printAvailHeap() {
   ESP_LOGD(TAG, "Max Heap: %u", (unsigned int)ESP.getMaxAllocHeap());
   ESP_LOGD(TAG, "Free Heap: %u", (unsigned int)ESP.getFreeHeap());
   ESP_LOGD(TAG, "Min Heap: %u", (unsigned int)ESP.getMinFreeHeap());
+}
+bool HCSR04Settings::begin() {
+  this->load();
+  return true;
+}
+bool HCSR04Settings::save() {
+  pref.begin("HCSR04");
+  pref.putBool("enabled", this->enabled);
+  pref.putUChar("trigPin", this->trigPin);
+  pref.putUChar("echoPin", this->echoPin);
+  pref.putUChar("intervalSec", this->intervalSec);
+  pref.end();
+  return true;
+}
+bool HCSR04Settings::load() {
+  pref.begin("HCSR04");
+  this->enabled = pref.getBool("enabled", false);
+  this->trigPin = pref.getUChar("trigPin", 255);
+  this->echoPin = pref.getUChar("echoPin", 255);
+  this->intervalSec = pref.getUChar("intervalSec", 5);
+  pref.end();
+  return true;
+}
+bool HCSR04Settings::toJSON(JsonObject &obj) {
+  obj["enabled"] = this->enabled;
+  obj["trigPin"] = this->trigPin;
+  obj["echoPin"] = this->echoPin;
+  obj["intervalSec"] = this->intervalSec;
+  return true;
+}
+bool HCSR04Settings::fromJSON(JsonObject &obj) {
+  if(!obj["enabled"].isNull())     this->enabled = obj["enabled"];
+  if(!obj["trigPin"].isNull())     this->trigPin = obj["trigPin"].as<uint8_t>();
+  if(!obj["echoPin"].isNull())     this->echoPin = obj["echoPin"].as<uint8_t>();
+  if(!obj["intervalSec"].isNull()) this->intervalSec = obj["intervalSec"].as<uint8_t>();
+  return true;
 }

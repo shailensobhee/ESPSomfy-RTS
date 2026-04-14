@@ -174,6 +174,18 @@ class MQTTSettings: BaseSettings {
 
     bool fromJSON(JsonObject &obj);
 };
+class HCSR04Settings: BaseSettings {
+  public:
+    bool enabled = false;
+    uint8_t trigPin = 255;   // 255 = not configured
+    uint8_t echoPin = 255;
+    uint8_t intervalSec = 5; // publish interval in seconds
+    bool begin();
+    bool save();
+    bool load();
+    bool toJSON(JsonObject &obj);
+    bool fromJSON(JsonObject &obj);
+};
 class ConfigSettings: BaseSettings {
   public:
     static void printAvailHeap();
@@ -193,6 +205,7 @@ class ConfigSettings: BaseSettings {
 #endif
     NTPSettings NTP;
     MQTTSettings MQTT;
+    HCSR04Settings HCSR04;
     SecuritySettings Security;
     bool requiresAuth();
     bool fromJSON(JsonObject &obj);
