@@ -17,6 +17,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncJson.h>
+#include "HCSR04.h"
 
 extern ConfigSettings settings;
 extern SSDPClass SSDP;
@@ -26,6 +27,7 @@ extern Web webServer;
 extern MQTTClass mqtt;
 extern GitUpdater git;
 extern ESPNetwork net;
+extern HCSR04Class hcsr04;
 
 //#define WEB_MAX_RESPONSE 34768
 #define WEB_MAX_RESPONSE 4096
@@ -2347,6 +2349,35 @@ void Web::begin() {
     serializeJson(doc, g_async_content, sizeof(g_async_content));
     request->send(200, _encoding_json, g_async_content);
   });
+
+  // hcsr04settings
+  asyncServer.on("/hcsr04settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    JsonDocument doc;
+    JsonObject obj = doc.to<JsonObject>();
+    settings.HCSR04.toJSON(obj);
+    if (hcsr04.lastDistanceCm >= 0)
+      obj["lastDistanceCm"] = hcsr04.lastDistanceCm;
+    serializeJson(doc, g_async_content, sizeof(g_async_content));
+    request->send(200, _encoding_json, g_async_content);
+  });
+
+  asyncServer.addHandler(new AsyncCallbackJsonWebHandler("/connecthcsr04",
+    [](AsyncWebServerRequest *request, JsonVariant &json) {
+      if (json.isNull()) {
+        request->send(500, "application/json", "{\"status\":\"ERROR\",\"desc\":\"JSON parse error\"}");
+        return;
+      }
+      JsonObject obj = json.as<JsonObject>();
+      hcsr04.end();
+      settings.HCSR04.fromJSON(obj);
+      settings.HCSR04.save();
+      hcsr04.begin();
+      JsonDocument sdoc;
+      JsonObject sobj = sdoc.to<JsonObject>();
+      settings.HCSR04.toJSON(sobj);
+      serializeJson(sdoc, g_async_content, sizeof(g_async_content));
+      request->send(200, _encoding_json, g_async_content);
+    }));
 
   // roomSortOrder
   asyncServer.addHandler(new AsyncCallbackJsonWebHandler("/roomSortOrder",
