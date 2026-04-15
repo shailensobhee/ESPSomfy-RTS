@@ -4245,24 +4245,24 @@ class Somfy {
 var somfy = new Somfy();
 class HCSR04 {
     initialized = false;
-    init() { this.initialized = true; this.loadSettings(); }
+    init() { this.initialized = true; }
     loadSettings() {
         getJSONSync('/hcsr04settings', (err, s) => {
             if (err) return;
-            var pins = [255, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+            const pins = [255, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
             ['selHCSR04Trig', 'selHCSR04Echo'].forEach(function(id) {
-                var sel = document.getElementById(id);
+                const sel = document.getElementById(id);
                 if (!sel) return;
                 sel.innerHTML = '';
                 pins.forEach(function(p) {
-                    var opt = document.createElement('option');
+                    const opt = document.createElement('option');
                     opt.value = p;
                     opt.text = p === 255 ? '-- not set --' : 'GPIO ' + p;
                     sel.appendChild(opt);
                 });
             });
             ui.toElement(document.getElementById('divSensorsSettings'), { hcsr04: s });
-            var div = document.getElementById('divHCSR04LastReading');
+            const div = document.getElementById('divHCSR04LastReading');
             if (div && typeof s.lastDistanceCm === 'number' && s.lastDistanceCm >= 0) {
                 div.style.display = '';
                 div.textContent = 'Last reading: ' + s.lastDistanceCm.toFixed(1) + ' cm';
