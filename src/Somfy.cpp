@@ -47,9 +47,16 @@ int sort_asc(const void *cmp1, const void *cmp2) {
 }
 
 static int interruptPin = 0;
+// Noise detection thresholds calibrated for Somfy RTS (SYMBOL=640µs → peak
+// legitimate edge rate ~1500/s, i.e. ~75 edges per 50ms burst). Trip at ~13×
+// that to leave ample margin; 2s cooldown prevents immediate re-trip storms.
+static constexpr uint32_t NOISE_WINDOW_MS = 50;
+static constexpr uint32_t NOISE_EDGE_THRESHOLD = 1000;
+static constexpr uint32_t NOISE_COOLDOWN_MS = 2000;
 static volatile bool noiseDetected = false;
-static volatile unsigned long noiseStart = 0;
-static volatile uint32_t noiseCount = 0;
+static volatile unsigned long noiseWindowStart = 0;
+static volatile uint32_t noiseWindowCount = 0;
+static volatile unsigned long noiseDisabledAt = 0;
 static uint8_t bit_length = 56;
 somfy_commands translateSomfyCommand(const String& string) {
     if (string.equalsIgnoreCase("My")) return somfy_commands::My;
@@ -4198,14 +4205,14 @@ void RECEIVE_ATTR Transceiver::handleReceive() {
     if (noiseDetected) return;
     if (somfy.transceiver.config.noiseDetection) {
         unsigned long now = millis();
-        if (noiseStart == 0) noiseStart = now;
-        if (now - noiseStart >= 10000) {
-            noiseStart = now;
-            noiseCount = 0;
+        if (noiseWindowStart == 0 || (now - noiseWindowStart) > NOISE_WINDOW_MS) {
+            noiseWindowStart = now;
+            noiseWindowCount = 0;
         }
-        noiseCount++;
-        if (noiseCount > 100) {
+        noiseWindowCount++;
+        if (noiseWindowCount > NOISE_EDGE_THRESHOLD) {
             gpio_intr_disable((gpio_num_t)interruptPin);
+            noiseDisabledAt = now;
             noiseDetected = true;
             return;
         }
@@ -4885,11 +4892,11 @@ bool Transceiver::begin() {
 void Transceiver::loop() {
   somfy_rx_t rx;
   if (noiseDetected && rxmode != 3 && this->config.noiseDetection) {
-    if (millis() - noiseStart > 100) {
+    if (millis() - noiseDisabledAt > NOISE_COOLDOWN_MS) {
       gpio_intr_enable((gpio_num_t)interruptPin);
       noiseDetected = false;
-      noiseStart = 0;
-      noiseCount = 0;
+      noiseWindowStart = 0;
+      noiseWindowCount = 0;
     }
   }
   if(rxmode == 3) {
