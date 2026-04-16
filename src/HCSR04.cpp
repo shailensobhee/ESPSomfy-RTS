@@ -2,6 +2,7 @@
 #include "ConfigSettings.h"
 #include "MQTT.h"
 #include "Sockets.h"
+#include "Somfy.h"
 #include "esp_log.h"
 #include <esp_rom_sys.h>
 
@@ -10,6 +11,7 @@ static const char *TAG = "HCSR04";
 extern ConfigSettings settings;
 extern MQTTClass mqtt;
 extern SocketEmitter sockEmit;
+extern SomfyShadeController somfy;
 
 // --- ISR state (must be in IRAM, accessed from interrupt context) ---
 static volatile uint64_t s_echoRiseUs = 0;
@@ -41,6 +43,17 @@ bool HCSR04Class::begin() {
         settings.HCSR04.trigPin == 255 ||
         settings.HCSR04.echoPin == 255) {
         ESP_LOGI(TAG, "HC-SR04 disabled or pins not configured — skipping");
+        return false;
+    }
+    if (settings.HCSR04.trigPin == settings.HCSR04.echoPin) {
+        ESP_LOGE(TAG, "HC-SR04 TRIG and ECHO cannot be the same pin (%d)",
+                 settings.HCSR04.trigPin);
+        return false;
+    }
+    if (somfy.transceiver.usesPin(settings.HCSR04.trigPin) ||
+        somfy.transceiver.usesPin(settings.HCSR04.echoPin)) {
+        ESP_LOGE(TAG, "HC-SR04 pins conflict with CC1101 (TRIG=%d ECHO=%d)",
+                 settings.HCSR04.trigPin, settings.HCSR04.echoPin);
         return false;
     }
     // Reset any stale ISR state from a previous measurement cycle
@@ -112,9 +125,13 @@ void HCSR04Class::end() {
 }
 
 void HCSR04Class::loop() {
-    if (!_active || !s_echoReady) return;
+    if (!_active) return;
 
     portDISABLE_INTERRUPTS();
+    if (!s_echoReady) {
+        portENABLE_INTERRUPTS();
+        return;
+    }
     uint64_t rise = s_echoRiseUs;
     uint64_t fall = s_echoFallUs;
     s_echoReady = false;

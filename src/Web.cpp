@@ -2369,10 +2369,15 @@ void Web::begin() {
       }
       ESP_LOGI(TAG, "Reconfiguring HC-SR04");
       JsonObject obj = json.as<JsonObject>();
+      bool wasEnabled = settings.HCSR04.enabled;
       hcsr04.end();
       settings.HCSR04.fromJSON(obj);
       settings.HCSR04.save();
+      if (wasEnabled && !settings.HCSR04.enabled)
+        hcsr04.unpublishDisco();
       bool started = hcsr04.begin();
+      if (!wasEnabled && settings.HCSR04.enabled && started)
+        hcsr04.publishDisco();
       JsonDocument sdoc;
       JsonObject sobj = sdoc.to<JsonObject>();
       settings.HCSR04.toJSON(sobj);
