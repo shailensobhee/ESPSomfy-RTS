@@ -456,6 +456,10 @@ void Web::handleDiscovery(AsyncWebServerRequest *request) {
     resp.beginArray("groups");
     serializeGroups(resp);
     resp.endArray();
+    resp.beginObject("hcsr04");
+    resp.addElem("enabled", settings.HCSR04.enabled);
+    resp.addElem("distanceCm", hcsr04.lastDistanceCm);
+    resp.endObject();
     resp.endObject();
     resp.endResponse();
     net.needsBroadcast = true;
