@@ -134,19 +134,21 @@ void HCSR04Class::loop() {
     }
     uint64_t rise = s_echoRiseUs;
     uint64_t fall = s_echoFallUs;
-    s_echoReady = false;
+    s_echoReady  = false;
+    s_echoRiseUs = 0;  // clear so next triggerCallback isn't blocked by the "pending echo" guard
+    s_echoFallUs = 0;
     portENABLE_INTERRUPTS();
 
     uint64_t durationUs = fall - rise;
     // Sanity check: HC-SR04 max range ~4m = ~23ms; min ~2cm = ~116µs
     if (durationUs < 116 || durationUs > 23200) {
-        ESP_LOGD(TAG, "HC-SR04 out-of-range pulse: %lluµs", durationUs);
+        ESP_LOGI(TAG, "HC-SR04 out-of-range pulse: %lluµs", durationUs);
         return;
     }
     float cm = (float)durationUs * 0.01715f; // µs × (0.0343 cm/µs ÷ 2)
     lastDistanceCm = cm;
 
-    ESP_LOGD(TAG, "Distance: %.1f cm", cm);
+    ESP_LOGI(TAG, "Distance: %.1f cm", cm);
 
     // Publish via MQTT
     if (mqtt.connected()) {
@@ -157,7 +159,9 @@ void HCSR04Class::loop() {
 
     // Emit to WebSocket clients
     JsonSockEvent *json = sockEmit.beginEmit("distance");
+    json->beginObject();
     json->addElem("distanceCm", cm);
+    json->endObject();
     sockEmit.endEmit();
 }
 

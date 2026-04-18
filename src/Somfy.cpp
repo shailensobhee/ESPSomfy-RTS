@@ -4785,7 +4785,7 @@ void transceiver_config_t::load() {
 }
 void transceiver_config_t::apply() {
     somfy.transceiver.disableReceive();
-    bit_length = this->type;    
+    bit_length = this->type;
     if(this->enabled) {
       bool radioInit = true;
       pref.begin("CC1101");
