@@ -315,21 +315,21 @@ void ESPNetwork::setConnected(conn_types_t connType) {
   SSDP.setHTTPPort(80);
   SSDP.setSchemaURL(0, "upnp.xml");
   SSDP.setChipId(0, this->getChipId());
-  SSDP.setDeviceType(0, "urn:schemas-rstrouse-org:device:ESPSomfyRTS:1");
+  SSDP.setDeviceType(0, "urn:schemas-sobhee-com:device:ESPSomfyRTS:1");
   SSDP.setName(0, settings.hostname);
 
   //SSDP.setSerialNumber(0, "C2496952-5610-47E6-A968-2FC19737A0DB");
   //SSDP.setUUID(0, settings.uuid);
-  SSDP.setModelName(0, "ESPSomfy RTS");
+  SSDP.setModelName(0, "ESPSomfy RTS Plus");
   if(strlen(settings.chipModel) == 0) SSDP.setModelNumber(0, "ESP32");
   else {
     char sModel[20] = "";
     snprintf(sModel, sizeof(sModel), "ESP32-%s", settings.chipModel);
     SSDP.setModelNumber(0, sModel);
   }
-  SSDP.setModelURL(0, "https://github.com/rstrouse/ESPSomfy-RTS");
-  SSDP.setManufacturer(0, "rstrouse");
-  SSDP.setManufacturerURL(0, "https://github.com/rstrouse");
+  SSDP.setModelURL(0, "https://github.com/shailensobhee/ESPSomfy-RTS");
+  SSDP.setManufacturer(0, "shailensobhee");
+  SSDP.setManufacturerURL(0, "https://github.com/shailensobhee");
   SSDP.setURL(0, "/");
   SSDP.setActive(0, true);
   safe_wdt_reset();
