@@ -1275,7 +1275,7 @@ class Security {
 }
 var security = new Security();
 
-// let appVersion = 'v3.0.11'; // Default placeholder
+// let appVersion = 'v3.1.0'; // Default placeholder
 async function getAppVersion() {
     try {
         const response = await fetch('/appversion');
@@ -1288,7 +1288,7 @@ async function getAppVersion() {
         // Trigger any UI updates here
     } catch (error) {
         console.error("Error loading App version:", error);
-        appVersion = 'v3.0.11'; // Default placeholder
+        appVersion = 'v3.1.0'; // Default placeholder
     }
     return appVersion;
 }
