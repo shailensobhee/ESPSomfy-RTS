@@ -537,6 +537,9 @@ async function initSockets() {
                         case 'frequencyScan':
                             somfy.procFrequencyScan(msg);
                             break;
+                        case 'distance':
+                            hcsr04.procDistance(msg);
+                            break;
 
                     }
                 } catch (err) {
@@ -4246,6 +4249,12 @@ var somfy = new Somfy();
 class HCSR04 {
     initialized = false;
     init() { this.initialized = true; }
+    procDistance(msg) {
+        const div = document.getElementById('divHCSR04LastReading');
+        if (!div || !msg || typeof msg.distanceCm !== 'number') return;
+        div.style.display = '';
+        div.textContent = 'Last reading: ' + msg.distanceCm.toFixed(1) + ' cm';
+    }
     loadSettings() {
         getJSONSync('/hcsr04settings', (err, s) => {
             if (err) return;
