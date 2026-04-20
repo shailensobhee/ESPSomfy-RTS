@@ -832,6 +832,11 @@ div.frame-header > span {
         text-align: right;
         white-space:nowrap;
     }
+    div.frame-row > span:nth-child(8),
+    div.frame-header > span:nth-child(8) {
+        width: 40px;
+        text-align: center;
+    }
 
 div.frame-list > div:nth-child(2n+1) {
     background: beige;

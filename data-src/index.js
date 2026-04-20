@@ -2934,7 +2934,8 @@ class Somfy {
                 proto = '-V';
                 break;
         }
-        let html = `<span>${frame.encKey}</span><span>${frame.address}</span><span>${frame.command}<sup>${frame.stepSize ? frame.stepSize : ''}</sup></span><span>${frame.rcode}</span><span>${frame.rssi}dBm</span><span>${frame.bits}${proto}</span><span>${fnFmtTime(frame.time)}</span><div class="frame-pulses">`;
+        let rawCmdHex = (typeof frame.rawCmd === 'number') ? `0x${frame.rawCmd.toString(16).toUpperCase()}` : '';
+        let html = `<span>${frame.encKey}</span><span>${frame.address}</span><span>${frame.command}<sup>${frame.stepSize ? frame.stepSize : ''}</sup></span><span>${frame.rcode}</span><span>${frame.rssi}dBm</span><span>${frame.bits}${proto}</span><span>${fnFmtTime(frame.time)}</span><span>${rawCmdHex}</span><div class="frame-pulses">`;
         for (let i = 0; i < frame.pulses.length; i++) {
             if (i !== 0) html += ',';
             html += `${frame.pulses[i]}`;
