@@ -189,6 +189,7 @@ struct somfy_frame_t {
     uint8_t bitLength = 56;
     uint16_t pulseCount = 0;
     uint8_t stepSize = 0;
+    uint8_t rawCmd = 0;
     void print();
     void encode80BitFrame(byte *frame, uint8_t repeat);
     byte calc80Checksum(byte b0, byte b1, byte b2);
