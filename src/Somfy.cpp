@@ -161,7 +161,8 @@ void somfy_frame_t::decodeFrame(byte* frame) {
     this->checksum = decoded[1] & 0b1111;
     this->encKey = decoded[0];
     // Lets first determine the protocol.
-    this->cmd = (somfy_commands)((decoded[1] >> 4));
+    this->rawCmd = decoded[1] >> 4;
+    this->cmd = (somfy_commands)(this->rawCmd);
     if(this->cmd == somfy_commands::RTWProto) {
       if(this->encKey >= 160) {
         this->proto = radio_proto::RTS;
@@ -173,7 +174,7 @@ void somfy_frame_t::decodeFrame(byte* frame) {
       }
       else if(this->encKey >= 133) {
         this->proto = radio_proto::RTW;
-        this->cmd = this->encKey == 133 ? somfy_commands::My : (somfy_commands)(this->encKey - 133);
+        this->cmd = (somfy_commands)(this->encKey - 132);
       }
     }
     else this->proto = radio_proto::RTS;
@@ -4429,6 +4430,11 @@ bool Transceiver::receive(somfy_rx_t *rx) {
       //Serial.printf("Processing receive %d\n", rx_queue.length);
       rx_queue.pop(rx);
       this->frame.decodeFrame(rx);
+      if(this->frame.valid) {
+        ESP_LOGI(TAG, "RX ADDR:%d CMD:%s RAW_CMD:0x%X KEY:0x%02X PROTO:%u",
+            this->frame.remoteAddress, translateSomfyCommand(this->frame.cmd).c_str(),
+            this->frame.rawCmd, this->frame.encKey, (uint8_t)this->frame.proto);
+      }
       this->emitFrame(&this->frame, rx);
       return this->frame.valid;
     }
@@ -4442,6 +4448,7 @@ void Transceiver::emitFrame(somfy_frame_t *frame, somfy_rx_t *rx) {
     json->addElem("address", (uint32_t)frame->remoteAddress);
     json->addElem("rcode", (uint32_t)frame->rollingCode);
     json->addElem("command", translateSomfyCommand(frame->cmd).c_str());
+    json->addElem("rawCmd", frame->rawCmd);
     json->addElem("rssi", (int32_t)frame->rssi);
     json->addElem("bits", rx->bit_length);
     json->addElem("proto", static_cast<uint8_t>(frame->proto));

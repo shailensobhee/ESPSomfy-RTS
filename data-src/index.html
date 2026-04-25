@@ -8,9 +8,9 @@
     <meta name="apple-mobile-web-app-title" content="ESPSomfy RTS App">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-    <link rel="stylesheet" href="main.css?v=3.1.0c" type="text/css" />
-    <link rel="stylesheet" href="widgets.css?v=3.1.0c" type="text/css" />
-    <link rel="stylesheet" href="icons.css?v=3.1.0c" type="text/css" />
+    <link rel="stylesheet" href="main.css?v=3.2.0c" type="text/css" />
+    <link rel="stylesheet" href="widgets.css?v=3.2.0c" type="text/css" />
+    <link rel="stylesheet" href="icons.css?v=3.2.0c" type="text/css" />
     <link rel="icon" type="image/png" href="favicon.png" />
 
     <!-- iPad retina icon -->
@@ -114,7 +114,7 @@
           rel="apple-touch-startup-image">
 
 
-    <script type="text/javascript" src="index.js?v=3.1.0c"></script>
+    <script type="text/javascript" src="index.js?v=3.2.0c"></script>
 </head>
 <body>
     <div id="divContainer" class="container main" data-auth="false">
@@ -1027,7 +1027,7 @@
                         </div>
                     </div>
                     <div id="divFrameLog" class="subtab-content frame-log" style="display:none;margin:0px;padding:0px;">
-                        <div class="frame-header"><span>Key</span><span>Address</span><span>Command</span><span>Code</span><span>RSSI</span><span>Bits</span><span style="text-align:center;width:77px;">Time</span></div>
+                        <div class="frame-header"><span>Key</span><span>Address</span><span>Command</span><span>Code</span><span>RSSI</span><span>Bits</span><span style="text-align:center;width:77px;">Time</span><span>Raw</span></div>
                         <div id="divFrames" class="frame-list"></div>
                         <div class="button-container" style="text-align:center">
                             <button type="button" class="btnCopyFrame" style="display:inline-block;width:44%;" onclick="somfy.framesToClipboard();">Copy</button>
@@ -1061,21 +1061,23 @@
                     <label for="fldPinEntry" style="margin-top:7px;">Enter Pin</label>
                 </div>
             </div>
-            <div id="divLoginPassword" style="display:none;" onkeyup="if (event.code === 'Enter') security.login();">
+            <form id="frmUnauthLogin" action="/login" method="post" onsubmit="security.login(event); return false;">
+            <div id="divLoginPassword" style="display:none;">
                 <div class="field-group">
-                    <input id="fldLoginUsername" name="username" type="text" data-bind="login.username" length=32 placeholder="Username" />
+                    <input id="fldLoginUsername" name="username" type="text" autocomplete="username" data-bind="login.username" length=32 placeholder="Username" />
                     <label for="fldLoginUsername">Username</label>
                 </div>
                 <div class="field-group">
-                    <input id="fldLoginPassword" name="password" type="password" data-bind="login.password" length=32 placeholder="Password" />
+                    <input id="fldLoginPassword" name="password" type="password" autocomplete="current-password" data-bind="login.password" length=32 placeholder="Password" />
                     <label for="fldLoginPassword">Password</label>
                 </div>
             </div>
             <div style="text-align:center;"><span id="spanLoginMessage" style="color:red"></span></div>
             <div id="loginButtons" class="button-container" style="display:none;text-align:center;">
-                <button id="btnLogin" type="button" onclick="security.login();" style="display:inline-block;width:42%;">Login</button>
+                <button id="btnLogin" type="submit" style="display:inline-block;width:42%;">Login</button>
                 <button id="btnCancelLogin" type="button" onclick="security.cancelLogin();" style="display:none;width:42%;">Cancel</button>
             </div>
+            </form>
         </div>
     </div>
     <script type="text/javascript">
